@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  node:
+    build: .
+    container_name: node-app
+    restart: always
+    working_dir: /usr/src/app
+    volumes:
+      - ./app:/usr/src/app
+      - /usr/src/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: crud_db
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - app-network
+
+  apache:
+    image: httpd:latest
+    container_name: apache-server
+    restart: always
+    ports:
+      - "8080:80"
+    volumes:
+      - ./app/public:/usr/local/apache2/htdocs/
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge

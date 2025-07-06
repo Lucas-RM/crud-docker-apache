@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>CRUD</title>
+</head>
+<body>
+  <h1>Usuários</h1>
+  <ul id="user-list"></ul>
+  <input id="name" placeholder="Nome" />
+  <button onclick="addUser()">Adicionar</button>
+
+  <script>
+    async function loadUsers() {
+      const res = await fetch('http://localhost:3000/users');
+      const users = await res.json();
+      document.getElementById('user-list').innerHTML = users.map(u => `<li>${u.name}</li>`).join('');
+    }
+
+    async function addUser() {
+      const name = document.getElementById('name').value;
+      await fetch('http://localhost:3000/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name })
+      });
+      loadUsers();
+    }
+
+    loadUsers();
+  </script>
+</body>
+</html>
