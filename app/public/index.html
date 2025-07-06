@@ -1,33 +1,120 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <title>CRUD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CRUD Node.js + MySQL</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
 </head>
-<body>
-  <h1>Usuários</h1>
-  <ul id="user-list"></ul>
-  <input id="name" placeholder="Nome" />
-  <button onclick="addUser()">Adicionar</button>
+<body class="bg-light">
+  <div class="container mt-5">
+    <h2 class="text-center mb-4">Gerenciamento de Usuários</h2>
+
+    <!-- FORMULÁRIO -->
+    <form id="formUsuario" class="mb-4">
+      <input type="hidden" id="usuarioId" />
+      <div class="row g-3">
+        <div class="col-md-5">
+          <input type="text" id="nome" class="form-control" placeholder="Nome" required />
+        </div>
+        <div class="col-md-2">
+          <button type="submit" class="btn btn-primary w-100">Salvar</button>
+        </div>
+      </div>
+    </form>
+
+    <!-- TABELA -->
+    <table class="table table-bordered table-hover">
+      <thead class="table-dark">
+        <tr>
+          <th>ID</th>
+          <th>Nome</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody id="tabelaUsuarios"></tbody>
+    </table>
+  </div>
 
   <script>
-    async function loadUsers() {
-      const res = await fetch('http://localhost:3000/users');
-      const users = await res.json();
-      document.getElementById('user-list').innerHTML = users.map(u => `<li>${u.name}</li>`).join('');
+    const apiUrl = 'http://localhost:3000/users';
+
+    const form = document.getElementById('formUsuario');
+    const nomeInput = document.getElementById('nome');
+    const usuarioIdInput = document.getElementById('usuarioId');
+    const tabela = document.getElementById('tabelaUsuarios');
+
+    async function carregarUsuarios() {
+      const resposta = await fetch(apiUrl);
+      const usuarios = await resposta.json();
+      tabela.innerHTML = '';
+    
+      if(usuarios.length > 0) {
+        usuarios.forEach(usuario => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${usuario.id}</td>
+            <td>${usuario.name}</td>
+            <td>
+              <button 
+                class="btn btn-warning btn-sm me-1" 
+                onclick="editar(${usuario.id}, '${usuario.name}')">
+                Editar
+              </button>
+
+              <button 
+                class="btn btn-danger btn-sm" 
+                onclick="deletar(${usuario.id})">
+                Excluir
+              </button>
+            </td>
+          `;
+          tabela.appendChild(tr);
+        });
+      }
     }
 
-    async function addUser() {
-      const name = document.getElementById('name').value;
-      await fetch('http://localhost:3000/users', {
-        method: 'POST',
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const nome = nomeInput.value.trim();
+      const id = usuarioIdInput.value;
+
+      const usuario = { nome };
+      const method = id ? 'PUT' : 'POST';
+      const url = id ? `${apiUrl}/${id}` : apiUrl;
+      
+      const resposta = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name })
+        body: JSON.stringify(usuario)
       });
-      loadUsers();
+
+      if (resposta.ok) {
+        form.reset();
+        usuarioIdInput.value = '';
+        await carregarUsuarios();
+      } else {
+        alert('Erro ao salvar usuário.');
+      }
+    });
+
+    async function deletar(id) {
+      if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        await fetch(`${apiUrl}/${id}`, { method: 'DELETE' });
+        carregarUsuarios();
+      }
     }
 
-    loadUsers();
+    function editar(id, nome) {
+      usuarioIdInput.value = id;
+      nomeInput.value = nome;
+    }
+
+    carregarUsuarios();
   </script>
 </body>
 </html>
